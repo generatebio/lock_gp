@@ -13,6 +13,8 @@ uv python install
 uv sync
 ```
 
+This repo was tested with **PyTorch 2.6**.
+
 ## Data
 
 - `data/cr6261_h1.csv` with columns `sequence` and `fitness`.
