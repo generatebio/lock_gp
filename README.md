@@ -1,16 +1,16 @@
-# LOCK GP Demo
+# LOCK GP
 
 Minimal, self-contained demo of LOCK GP on CR6261-H1 antibody fitness data.
 
 ## Setup
 
-We require Python 3.10 or later.
+Python 3.10 or later is required. We recommend [`uv`](https://docs.astral.sh/uv/getting-started/installation/) for easy and reproducible installation.
 
 ```bash
-cd lock_demo
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+git clone git@github.com:generatebio/lock_gp.git
+cd lock_gp
+uv python install
+uv sync
 ```
 
 ## Data
@@ -21,7 +21,7 @@ pip install -e .
 ## How to run
 
 ```bash
-python -m lock_demo.train --num-training 256
+uv run python -m lock_gp.train --num-training 256
 ```
 
 The script:
