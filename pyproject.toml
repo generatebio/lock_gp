@@ -1,8 +1,12 @@
 [project]
-name = "lock-gp-demo"
+name = "lock-gp"
 version = "0.1.0"
 description = "Minimal demo of LOCK GP on CR6261-H1 antibody dataset."
-authors = [{name = "LOCK-GP Demo", email = "jankowiak@gmail.com"}]
+authors = [
+    {name = "Martin Jankowiak", email = "jankowiak@gmail.com"},
+    {name = "Yerdos Ordabayev", email = "yordabayev@generatebiomedicines.com"},
+    {name = "Rudraksh Tuwani", email = "rtuwani@generatebiomedicines.com"},
+]
 requires-python = ">=3.10"
 dependencies = [
     "torch>=2.1.0",
