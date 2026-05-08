@@ -215,7 +215,7 @@ wheels = [
 ]
 
 [[package]]
-name = "lock-gp-demo"
+name = "lock-gp"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
