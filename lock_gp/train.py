@@ -21,7 +21,23 @@ from .tanimoto_kernel import TanimotoKernel
 def train_test_split(
     x: torch.Tensor, y: torch.Tensor, num_train: int, device: torch.device
 ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    """Deterministic train/test split."""
+    """
+    Deterministic train/test split: first `num_train` rows are train, rest are
+    test. No shuffling is performed.
+
+    Args:
+        x: Input tensor of shape (N, ...).
+        y: Target tensor of shape (N,) aligned with `x` along dim 0.
+        num_train: Number of training points. Must satisfy 0 < num_train < N.
+        device: Device to place the returned tensors on.
+
+    Returns:
+        `(x_train, y_train, x_test, y_test)` with `num_train` and
+        `N - num_train` rows respectively. Dtypes match the inputs.
+
+    Raises:
+        ValueError: If `num_train` is not strictly between 0 and N.
+    """
     n = x.shape[0]
     if num_train <= 0 or num_train >= n:
         raise ValueError("num_train must be in (0, N).")
@@ -32,15 +48,33 @@ def train_test_split(
     return x_train, y_train, x_test, y_test
 
 
-def evaluate(y_true: np.ndarray, y_pred_mean: np.ndarray, y_pred_var: np.ndarray) -> dict[str, float]:
-    """Compute Spearman, Pearson, MAE, and NLL."""
-    spearman = spearmanr(y_true, y_pred_mean).statistic
-    pearson = pearsonr(y_true, y_pred_mean).statistic
-    mae = float(np.mean(np.abs(y_true - y_pred_mean)))
+def evaluate(
+    y_true: torch.Tensor, y_pred_mean: torch.Tensor, y_pred_var: torch.Tensor
+) -> dict[str, float]:
+    """
+    Compute Spearman, Pearson, MAE, and mean Gaussian NLL for scalar
+    regression predictions.
+
+    Args:
+        y_true: Ground-truth targets of shape (N,).
+        y_pred_mean: Predicted means of shape (N,).
+        y_pred_var: Predicted variances of shape (N,). Must be strictly
+            positive.
+
+    Returns:
+        Dict with keys `"spearman"`, `"pearson"`, `"mae"`, `"nll"`.
+    """
+    y_true_np = y_true.detach().cpu().numpy()
+    y_pred_mean_np = y_pred_mean.detach().cpu().numpy()
+    y_pred_var_np = y_pred_var.detach().cpu().numpy()
+
+    spearman = spearmanr(y_true_np, y_pred_mean_np).statistic
+    pearson = pearsonr(y_true_np, y_pred_mean_np).statistic
+    mae = float(np.mean(np.abs(y_true_np - y_pred_mean_np)))
     nll = float(
         np.mean(
-            0.5 * np.log(2 * np.pi * y_pred_var)
-            + 0.5 * (y_true - y_pred_mean) ** 2 / y_pred_var
+            0.5 * np.log(2 * np.pi * y_pred_var_np)
+            + 0.5 * (y_true_np - y_pred_mean_np) ** 2 / y_pred_var_np
         )
     )
 
@@ -61,7 +95,7 @@ def main() -> None:
     y_np = df["fitness"].to_numpy(dtype=np.float64)
 
     alphabet, _ = get_blosum50_matrix()
-    x = encode_one_hot(sequences, alphabet).double()
+    x = encode_one_hot(sequences, alphabet, dtype=torch.float64)
     y = torch.tensor(y_np, dtype=torch.float64)
 
     x_train, y_train, x_test, y_test = train_test_split(
@@ -80,13 +114,13 @@ def main() -> None:
     )
     linear_gp.fit(x_train, y_train)
     linear_mean, linear_var = linear_gp.predict(x_test)
-    linear_metrics = evaluate(y_test.cpu().numpy(), linear_mean.cpu().numpy(), linear_var.cpu().numpy())
+    linear_metrics = evaluate(y_test, linear_mean, linear_var)
 
     # LOCK GP
     lock_gp = GPWrapper(kernel_factory=lambda x: build_lock_kernel(num_positions=x.shape[1]))
     lock_gp.fit(x_train, y_train)
     lock_mean, lock_var = lock_gp.predict(x_test)
-    lock_metrics = evaluate(y_test.cpu().numpy(), lock_mean.cpu().numpy(), lock_var.cpu().numpy())
+    lock_metrics = evaluate(y_test, lock_mean, lock_var)
 
     # Tanimoto GP
     tanimoto_gp = GPWrapper(
@@ -98,7 +132,7 @@ def main() -> None:
     )
     tanimoto_gp.fit(x_train, y_train)
     tanimoto_mean, tanimoto_var = tanimoto_gp.predict(x_test)
-    tanimoto_metrics = evaluate(y_test.cpu().numpy(), tanimoto_mean.cpu().numpy(), tanimoto_var.cpu().numpy())
+    tanimoto_metrics = evaluate(y_test, tanimoto_mean, tanimoto_var)
 
     for name, metrics in [("Linear GP", linear_metrics), ("Tanimoto GP", tanimoto_metrics), ("LOCK GP", lock_metrics)]:
         spaces = " " * max(0, 15 - len(name))

@@ -27,3 +27,11 @@ dev = ["pytest>=8"]
 [tool.setuptools.packages.find]
 include = ["lock_gp"]
 
+[tool.ruff]
+line-length = 120
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+default = true
+

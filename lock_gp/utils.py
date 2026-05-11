@@ -1,10 +1,28 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from functools import partial
 
+import gpytorch
 import torch
 import torch.nn.functional as F
+
+
+def standardize(y: torch.Tensor) -> tuple[torch.Tensor, float, float]:
+    """
+    Standardize a 1D target tensor to zero mean and unit variance.
+
+    Args:
+        y: Target tensor.
+
+    Returns:
+        Tuple of (standardized tensor, mean, std). If the std is zero, it is
+        replaced with 1.0 to avoid division by zero.
+    """
+    y_mean = y.mean().item()
+    y_std = y.std().item()
+    if y_std <= 0:
+        y_std = 1.0
+    return (y - y_mean) / y_std, y_mean, y_std
 
 
 def reshape_inputs(x: torch.Tensor, num_positions: int) -> torch.Tensor:
@@ -32,9 +50,19 @@ def reshape_inputs(x: torch.Tensor, num_positions: int) -> torch.Tensor:
     return x.view(x.shape[0], num_positions, embed_dim)
 
 
-def encode_one_hot(sequences: list[str], alphabet: Sequence[str]) -> torch.Tensor:
+def encode_one_hot(
+    sequences: list[str],
+    alphabet: Sequence[str],
+    dtype: torch.dtype = torch.float64,
+) -> torch.Tensor:
     """
     Convert sequences to one-hot tensor of shape (N, L, A).
+
+    Args:
+        sequences: List of equal-length sequences.
+        alphabet: Ordered alphabet of valid tokens.
+        dtype: Floating-point dtype of the returned one-hot tensor. Defaults
+            to ``torch.float64``.
 
     Raises:
         ValueError: if any sequence contains a token outside the alphabet or
@@ -49,14 +77,17 @@ def encode_one_hot(sequences: list[str], alphabet: Sequence[str]) -> torch.Tenso
     if unknown:
         raise ValueError(f"Unknown token(s) {sorted(unknown)} encountered.")
 
-    indices = torch.tensor([[alphabet_index[tok] for tok in seq] for seq in sequences], dtype=torch.int64)
-    n = indices.shape[0]
-    a = len(alphabet)
-    one_hot = F.one_hot(indices, num_classes=a).to(dtype=torch.float64)
-    return one_hot
+    indices = torch.tensor(
+        [[alphabet_index[tok] for tok in seq] for seq in sequences], dtype=torch.int64
+    )
+    return F.one_hot(indices, num_classes=len(alphabet)).to(dtype=dtype)
 
 
-def _gpytorch_default_setting_closure(module, value, param_name):
+def _gpytorch_default_setting_closure(
+    module: gpytorch.Module,
+    value: torch.Tensor,
+    param_name: str,
+) -> None:
     """Set a parameter value, handling the raw transform if needed.
 
     This is the inverse of the default closure. It sets the parameter
