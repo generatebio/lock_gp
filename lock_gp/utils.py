@@ -46,8 +46,8 @@ def reshape_inputs(x: torch.Tensor, num_positions: int) -> torch.Tensor:
         raise ValueError("Expected x to have shape (N, L, A) or (N, L*A).")
     if x.shape[1] % num_positions != 0:
         raise ValueError("Input feature dimension is not divisible by num_positions.")
-    embed_dim = x.shape[1] // num_positions
-    return x.view(x.shape[0], num_positions, embed_dim)
+    alphabet_size = x.shape[1] // num_positions
+    return x.view(x.shape[0], num_positions, alphabet_size)
 
 
 def encode_one_hot(
@@ -77,9 +77,7 @@ def encode_one_hot(
     if unknown:
         raise ValueError(f"Unknown token(s) {sorted(unknown)} encountered.")
 
-    indices = torch.tensor(
-        [[alphabet_index[tok] for tok in seq] for seq in sequences], dtype=torch.int64
-    )
+    indices = torch.tensor([[alphabet_index[tok] for tok in seq] for seq in sequences], dtype=torch.int64)
     return F.one_hot(indices, num_classes=len(alphabet)).to(dtype=dtype)
 
 

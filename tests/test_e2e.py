@@ -1,4 +1,5 @@
 """End-to-end test: install → train → verify metric thresholds."""
+
 from __future__ import annotations
 
 import re
@@ -26,10 +27,7 @@ def test_train_end_to_end() -> None:
         cwd=REPO_ROOT,
         timeout=600,
     )
-    assert result.returncode == 0, (
-        f"Train script exited with code {result.returncode}.\n"
-        f"stderr:\n{result.stderr}"
-    )
+    assert result.returncode == 0, f"Train script exited with code {result.returncode}.\nstderr:\n{result.stderr}"
 
     output = result.stdout
     for name, threshold in _THRESHOLDS.items():
@@ -37,6 +35,5 @@ def test_train_end_to_end() -> None:
         assert match, f"Could not find '{name}' metrics in output:\n{output}"
         spearman = float(match.group(1))
         assert spearman >= threshold, (
-            f"{name} Spearman {spearman:.3f} is below threshold {threshold}.\n"
-            f"Full output:\n{output}"
+            f"{name} Spearman {spearman:.3f} is below threshold {threshold}.\nFull output:\n{output}"
         )

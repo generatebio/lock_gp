@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 from gpytorch.constraints import GreaterThan
-from gpytorch.kernels import LinearKernel, ScaleKernel
+from gpytorch.kernels import Kernel, LinearKernel, ScaleKernel
 from gpytorch.priors import GammaPrior
 from scipy.stats import pearsonr, spearmanr
 
@@ -48,9 +49,7 @@ def train_test_split(
     return x_train, y_train, x_test, y_test
 
 
-def evaluate(
-    y_true: torch.Tensor, y_pred_mean: torch.Tensor, y_pred_var: torch.Tensor
-) -> dict[str, float]:
+def evaluate(y_true: torch.Tensor, y_pred_mean: torch.Tensor, y_pred_var: torch.Tensor) -> dict[str, float]:
     """
     Compute Spearman, Pearson, MAE, and mean Gaussian NLL for scalar
     regression predictions.
@@ -72,10 +71,7 @@ def evaluate(
     pearson = pearsonr(y_true_np, y_pred_mean_np).statistic
     mae = float(np.mean(np.abs(y_true_np - y_pred_mean_np)))
     nll = float(
-        np.mean(
-            0.5 * np.log(2 * np.pi * y_pred_var_np)
-            + 0.5 * (y_true_np - y_pred_mean_np) ** 2 / y_pred_var_np
-        )
+        np.mean(0.5 * np.log(2 * np.pi * y_pred_var_np) + 0.5 * (y_true_np - y_pred_mean_np) ** 2 / y_pred_var_np)
     )
 
     return {"spearman": spearman, "pearson": pearson, "mae": mae, "nll": nll}
@@ -98,43 +94,38 @@ def main() -> None:
     x = encode_one_hot(sequences, alphabet, dtype=torch.float64)
     y = torch.tensor(y_np, dtype=torch.float64)
 
-    x_train, y_train, x_test, y_test = train_test_split(
-        x, y, num_train=args.num_training, device=device
-    )
+    x_train, y_train, x_test, y_test = train_test_split(x, y, num_train=args.num_training, device=device)
 
     print(f"Device: {device}     Train size: {len(y_train)}     Test size: {len(y_test)}")
 
-    # Linear GP
-    linear_gp = GPWrapper(
-        kernel_factory=lambda x: ScaleKernel(
-            LinearKernel(),
-            outputscale_prior=GammaPrior(2.0, 2.0),
-            outputscale_constraint=GreaterThan(1e-4),
-        )
-    )
-    linear_gp.fit(x_train, y_train)
-    linear_mean, linear_var = linear_gp.predict(x_test)
-    linear_metrics = evaluate(y_test, linear_mean, linear_var)
+    gp_configs: list[tuple[str, Callable[[torch.Tensor], Kernel]]] = [
+        (
+            "Linear GP",
+            lambda x: ScaleKernel(
+                LinearKernel(),
+                outputscale_prior=GammaPrior(2.0, 2.0),
+                outputscale_constraint=GreaterThan(1e-4),
+            ),
+        ),
+        (
+            "Tanimoto GP",
+            lambda x: ScaleKernel(
+                TanimotoKernel(num_positions=x.shape[1]),
+                outputscale_prior=GammaPrior(2.0, 2.0),
+                outputscale_constraint=GreaterThan(1e-4),
+            ),
+        ),
+        ("LOCK GP", lambda x: build_lock_kernel(num_positions=x.shape[1])),
+    ]
 
-    # LOCK GP
-    lock_gp = GPWrapper(kernel_factory=lambda x: build_lock_kernel(num_positions=x.shape[1]))
-    lock_gp.fit(x_train, y_train)
-    lock_mean, lock_var = lock_gp.predict(x_test)
-    lock_metrics = evaluate(y_test, lock_mean, lock_var)
+    results: dict[str, dict[str, float]] = {}
+    for name, kernel_factory in gp_configs:
+        gp = GPWrapper(kernel_factory=kernel_factory)
+        gp.fit(x_train, y_train)
+        mean, var = gp.predict(x_test)
+        results[name] = evaluate(y_test, mean, var)
 
-    # Tanimoto GP
-    tanimoto_gp = GPWrapper(
-        kernel_factory=lambda x: ScaleKernel(
-            TanimotoKernel(num_positions=x.shape[1]),
-            outputscale_prior=GammaPrior(2.0, 2.0),
-            outputscale_constraint=GreaterThan(1e-4),
-        )
-    )
-    tanimoto_gp.fit(x_train, y_train)
-    tanimoto_mean, tanimoto_var = tanimoto_gp.predict(x_test)
-    tanimoto_metrics = evaluate(y_test, tanimoto_mean, tanimoto_var)
-
-    for name, metrics in [("Linear GP", linear_metrics), ("Tanimoto GP", tanimoto_metrics), ("LOCK GP", lock_metrics)]:
+    for name, metrics in results.items():
         spaces = " " * max(0, 15 - len(name))
         print(
             f"{name}:{spaces}spearman: {metrics['spearman']:.3f}  |  pearson: {metrics['pearson']:.3f}  |  "

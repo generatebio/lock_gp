@@ -129,7 +129,7 @@ def build_lock_kernel(num_positions: int) -> Kernel:
     Build the full LOCK kernel.
 
     Note that it is generally recommended to include all sequence positions
-    that may be variable at inference time, because restricing to only those
+    that may be variable at inference time, because restricting to only those
     positions that are variable in the training data means that other positions
     will effectively be ignored at inference time.
 

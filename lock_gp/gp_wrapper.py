@@ -23,14 +23,14 @@ class GPWrapper:
         kernel_factory: Callable that returns a Kernel for a given input tensor.
     """
 
-    # Instance attributes set by fit method
-    model: ExactGPModel
-    y_mean: float
-    y_std: float
-
     def __init__(self, kernel_factory: Callable[[torch.Tensor], Kernel]) -> None:
         """Initialize the GP wrapper."""
         self.kernel_factory = kernel_factory
+
+        # Instance attributes set by fit method
+        self.model: ExactGPModel
+        self.y_mean: float
+        self.y_std: float
 
     def fit(self, x: torch.Tensor, y: torch.Tensor) -> None:
         """
@@ -47,9 +47,8 @@ class GPWrapper:
             raise ValueError("Expected x to have shape (N, L, A).")
         if x.shape[0] != y.shape[0]:
             raise ValueError("Mismatched x/y batch dimensions.")
-        if any(hasattr(self, attr) for attr in ["model", "y_mean", "y_std"]):
+        if hasattr(self, "model"):
             logger.warning("Model already fitted. Overwriting.")
-            del self.model, self.y_mean, self.y_std
 
         train_y, y_mean, y_std = standardize(y)
 
@@ -71,7 +70,10 @@ class GPWrapper:
         self.y_mean = y_mean
         self.y_std = y_std
 
-        # Clean up to free memory
+        # Exact GP fitting accumulates sizeable intermediate tensors (Cholesky
+        # factors, gradients) that Python's refcount GC does not always release
+        # promptly; force a collection so the CUDA cache can be returned to the
+        # allocator before downstream prediction runs.
         del mll
         gc.collect()
         if x.is_cuda:
@@ -92,11 +94,7 @@ class GPWrapper:
             RuntimeError: If model is not fit yet.
             ValueError: If x has incorrect shape.
         """
-        if (
-            not hasattr(self, "model")
-            or not hasattr(self, "y_mean")
-            or not hasattr(self, "y_std")
-        ):
+        if not hasattr(self, "model"):
             raise RuntimeError("Model is not fit yet.")
         if x.ndim != 3:
             raise ValueError("Expected x to have shape (N, L, A).")
