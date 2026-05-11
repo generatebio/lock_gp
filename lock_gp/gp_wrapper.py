@@ -8,7 +8,6 @@ from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import Kernel
 
 from .exact_gp import ExactGPModel
-from .utils import standardize
 import logging
 import gc
 
@@ -50,7 +49,12 @@ class GPWrapper:
         if hasattr(self, "model"):
             logger.warning("Model already fitted. Overwriting.")
 
-        train_y, y_mean, y_std = standardize(y)
+        # Standardize y
+        y_mean = y.mean().item()
+        y_std = y.std().item()
+        if y_std <= 0:
+            y_std = 1.0
+        train_y = (y - y_mean) / y_std
 
         # Flatten x for GPyTorch
         n, seq_len, alphabet_size = x.shape

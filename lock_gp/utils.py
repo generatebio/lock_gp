@@ -7,24 +7,6 @@ import torch
 import torch.nn.functional as F
 
 
-def standardize(y: torch.Tensor) -> tuple[torch.Tensor, float, float]:
-    """
-    Standardize a 1D target tensor to zero mean and unit variance.
-
-    Args:
-        y: Target tensor.
-
-    Returns:
-        Tuple of (standardized tensor, mean, std). If the std is zero, it is
-        replaced with 1.0 to avoid division by zero.
-    """
-    y_mean = y.mean().item()
-    y_std = y.std().item()
-    if y_std <= 0:
-        y_std = 1.0
-    return (y - y_mean) / y_std, y_mean, y_std
-
-
 def reshape_inputs(x: torch.Tensor, num_positions: int) -> torch.Tensor:
     """
     Reshape input tensor from 2D (N, L*A) to 3D (N, L, A) if needed.
