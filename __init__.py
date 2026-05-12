@@ -1,1 +1,0 @@
-"""LOCK GP demo package."""

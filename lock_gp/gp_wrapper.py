@@ -7,7 +7,17 @@ import torch
 from botorch.fit import fit_gpytorch_mll
 from gpytorch.kernels import Kernel
 
+from gpytorch.constraints import GreaterThan
+from gpytorch.kernels import LinearKernel, ScaleKernel
+from gpytorch.priors import GammaPrior
+
 from .exact_gp import ExactGPModel
+from .lock_kernel import build_lock_kernel
+from .tanimoto_kernel import TanimotoKernel
+import logging
+import gc
+
+logger = logging.getLogger(__name__)
 
 
 class GPWrapper:
@@ -21,6 +31,8 @@ class GPWrapper:
     def __init__(self, kernel_factory: Callable[[torch.Tensor], Kernel]) -> None:
         """Initialize the GP wrapper."""
         self.kernel_factory = kernel_factory
+
+        # Instance attributes set by fit method
         self.model: ExactGPModel
         self.y_mean: float
         self.y_std: float
@@ -40,11 +52,15 @@ class GPWrapper:
             raise ValueError("Expected x to have shape (N, L, A).")
         if x.shape[0] != y.shape[0]:
             raise ValueError("Mismatched x/y batch dimensions.")
+        if hasattr(self, "model"):
+            logger.warning("Model already fitted. Overwriting.")
 
         # Standardize y
-        self.y_mean = y.mean().item()
-        self.y_std = y.std().item() if y.std().item() > 0 else 1.0
-        train_y = (y - self.y_mean) / self.y_std
+        y_mean = y.mean().item()
+        y_std = y.std().item()
+        if y_std <= 0:
+            y_std = 1.0
+        train_y = (y - y_mean) / y_std
 
         # Flatten x for GPyTorch
         n, seq_len, alphabet_size = x.shape
@@ -53,18 +69,27 @@ class GPWrapper:
         # Create kernel and model
         kernel = self.kernel_factory(x)
         model = ExactGPModel(train_x=x_flat, train_y=train_y, kernel=kernel)
-        model = model.to(x.device).double()
+        model = model.to(x.device, dtype=torch.float64)
         model.train()
-        model.likelihood.train()
 
         # Fit
         mll = gpytorch.mlls.ExactMarginalLogLikelihood(model.likelihood, model)
         fit_gpytorch_mll(mll)
 
         self.model = model
-        self.model.eval()
-        self.model.likelihood.eval()
+        self.y_mean = y_mean
+        self.y_std = y_std
 
+        # Exact GP fitting accumulates sizeable intermediate tensors (Cholesky
+        # factors, gradients) that Python's refcount GC does not always release
+        # promptly; force a collection so the CUDA cache can be returned to the
+        # allocator before downstream prediction runs.
+        del mll
+        gc.collect()
+        if x.is_cuda:
+            torch.cuda.empty_cache()
+
+    @torch.no_grad()
     def predict(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Predict mean and variance, unstandardizing to original scale.
@@ -79,12 +104,14 @@ class GPWrapper:
             RuntimeError: If model is not fit yet.
             ValueError: If x has incorrect shape.
         """
-        if not hasattr(self, "model") or not hasattr(self, "y_mean") or not hasattr(self, "y_std"):
+        if not hasattr(self, "model"):
             raise RuntimeError("Model is not fit yet.")
         if x.ndim != 3:
             raise ValueError("Expected x to have shape (N, L, A).")
 
-        with torch.no_grad(), gpytorch.settings.fast_pred_var():
+        self.model.eval()
+
+        with gpytorch.settings.fast_pred_var():
             n, seq_len, alphabet_size = x.shape
             x_flat = x.view(n, seq_len * alphabet_size)
 
@@ -93,3 +120,39 @@ class GPWrapper:
             var = posterior.variance * (self.y_std**2)
 
             return mean, var
+
+
+class LinearGP(GPWrapper):
+    """GP with a scaled linear kernel."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            kernel_factory=lambda x: ScaleKernel(
+                LinearKernel(),
+                outputscale_prior=GammaPrior(2.0, 2.0),
+                outputscale_constraint=GreaterThan(1e-4),
+            )
+        )
+
+
+class LockGP(GPWrapper):
+    """GP with the composite LOCK kernel."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            kernel_factory=lambda x: build_lock_kernel(num_positions=x.shape[1])
+        )
+
+
+class TanimotoGP(GPWrapper):
+    """GP with a scaled Tanimoto kernel using BLOSUM50 encoding."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            kernel_factory=lambda x: ScaleKernel(
+                TanimotoKernel(num_positions=x.shape[1]),
+                outputscale_prior=GammaPrior(2.0, 2.0),
+                outputscale_constraint=GreaterThan(1e-4),
+            )
+        )
+

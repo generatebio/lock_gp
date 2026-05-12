@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from functools import partial
 
+import gpytorch
 import torch
 import torch.nn.functional as F
 
@@ -28,13 +28,23 @@ def reshape_inputs(x: torch.Tensor, num_positions: int) -> torch.Tensor:
         raise ValueError("Expected x to have shape (N, L, A) or (N, L*A).")
     if x.shape[1] % num_positions != 0:
         raise ValueError("Input feature dimension is not divisible by num_positions.")
-    embed_dim = x.shape[1] // num_positions
-    return x.view(x.shape[0], num_positions, embed_dim)
+    alphabet_size = x.shape[1] // num_positions
+    return x.view(x.shape[0], num_positions, alphabet_size)
 
 
-def encode_one_hot(sequences: list[str], alphabet: Sequence[str]) -> torch.Tensor:
+def encode_one_hot(
+    sequences: list[str],
+    alphabet: Sequence[str],
+    dtype: torch.dtype = torch.float64,
+) -> torch.Tensor:
     """
     Convert sequences to one-hot tensor of shape (N, L, A).
+
+    Args:
+        sequences: List of equal-length sequences.
+        alphabet: Ordered alphabet of valid tokens.
+        dtype: Floating-point dtype of the returned one-hot tensor. Defaults
+            to ``torch.float64``.
 
     Raises:
         ValueError: if any sequence contains a token outside the alphabet or
@@ -50,13 +60,14 @@ def encode_one_hot(sequences: list[str], alphabet: Sequence[str]) -> torch.Tenso
         raise ValueError(f"Unknown token(s) {sorted(unknown)} encountered.")
 
     indices = torch.tensor([[alphabet_index[tok] for tok in seq] for seq in sequences], dtype=torch.int64)
-    n = indices.shape[0]
-    a = len(alphabet)
-    one_hot = F.one_hot(indices, num_classes=a).to(dtype=torch.float64)
-    return one_hot
+    return F.one_hot(indices, num_classes=len(alphabet)).to(dtype=dtype)
 
 
-def _gpytorch_default_setting_closure(module, value, param_name):
+def _gpytorch_default_setting_closure(
+    module: gpytorch.Module,
+    value: torch.Tensor,
+    param_name: str,
+) -> None:
     """Set a parameter value, handling the raw transform if needed.
 
     This is the inverse of the default closure. It sets the parameter

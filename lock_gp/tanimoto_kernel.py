@@ -45,15 +45,15 @@ class TanimotoKernel(Kernel):
         """
         x1 = reshape_inputs(x1, self.num_positions)
         x2 = reshape_inputs(x2, self.num_positions)
+        if diag:
+            return torch.ones(x1.shape[0], dtype=x1.dtype, device=x1.device)
+
         e = self.encoding.to(dtype=x1.dtype, device=x1.device)
         x1_enc = torch.einsum("bla,aA->blA", x1, e)
         x2_enc = torch.einsum("bla,aA->blA", x2, e)
-        if diag:
-            return torch.ones(x1.shape[0], dtype=x1.dtype, device=x1.device)
-        else:
-            dot = torch.einsum("blA,BlA->bB", x1_enc, x2_enc)
-            n1 = torch.linalg.vector_norm(x1_enc, dim=[1, 2], ord=2) ** 2
-            n2 = torch.linalg.vector_norm(x2_enc, dim=[1, 2], ord=2) ** 2
-            n1 = n1[:, None]
-            n2 = n2[None, :]
-            return dot / (n1 + n2 - dot)
+        dot = torch.einsum("blA,BlA->bB", x1_enc, x2_enc)
+        n1 = torch.linalg.vector_norm(x1_enc, dim=[1, 2], ord=2) ** 2
+        n2 = torch.linalg.vector_norm(x2_enc, dim=[1, 2], ord=2) ** 2
+        n1 = n1[:, None]
+        n2 = n2[None, :]
+        return dot / (n1 + n2 - dot)
