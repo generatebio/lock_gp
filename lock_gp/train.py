@@ -1,22 +1,16 @@
 from __future__ import annotations
 
 import argparse
-from collections.abc import Callable
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
-from gpytorch.constraints import GreaterThan
-from gpytorch.kernels import Kernel, LinearKernel, ScaleKernel
-from gpytorch.priors import GammaPrior
 from scipy.stats import pearsonr, spearmanr
 
 from .blosum50 import get_blosum50_matrix
 from .utils import encode_one_hot
-from .gp_wrapper import GPWrapper
-from .lock_kernel import build_lock_kernel
-from .tanimoto_kernel import TanimotoKernel
+from .gp_wrapper import GPWrapper, LinearGP, LockGP, TanimotoGP
 
 
 def train_test_split(
@@ -98,29 +92,15 @@ def main() -> None:
 
     print(f"Device: {device}     Train size: {len(y_train)}     Test size: {len(y_test)}")
 
-    gp_configs: list[tuple[str, Callable[[torch.Tensor], Kernel]]] = [
-        (
-            "Linear GP",
-            lambda x: ScaleKernel(
-                LinearKernel(),
-                outputscale_prior=GammaPrior(2.0, 2.0),
-                outputscale_constraint=GreaterThan(1e-4),
-            ),
-        ),
-        (
-            "Tanimoto GP",
-            lambda x: ScaleKernel(
-                TanimotoKernel(num_positions=x.shape[1]),
-                outputscale_prior=GammaPrior(2.0, 2.0),
-                outputscale_constraint=GreaterThan(1e-4),
-            ),
-        ),
-        ("LOCK GP", lambda x: build_lock_kernel(num_positions=x.shape[1])),
+    gp_configs: list[tuple[str, type[GPWrapper]]] = [
+        ("Linear GP", LinearGP),
+        ("Tanimoto GP", TanimotoGP),
+        ("LOCK GP", LockGP),
     ]
 
     results: dict[str, dict[str, float]] = {}
-    for name, kernel_factory in gp_configs:
-        gp = GPWrapper(kernel_factory=kernel_factory)
+    for name, gp_cls in gp_configs:
+        gp = gp_cls()
         gp.fit(x_train, y_train)
         mean, var = gp.predict(x_test)
         results[name] = evaluate(y_test, mean, var)
