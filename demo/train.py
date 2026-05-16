@@ -8,9 +8,9 @@ import pandas as pd
 import torch
 from scipy.stats import pearsonr, spearmanr
 
-from .blosum50 import get_blosum50_matrix
-from .utils import encode_one_hot
-from .gp_wrapper import GPWrapper, LinearGP, LockGP, TanimotoGP
+from demo.util import encode_one_hot
+from lock_gp.blosum50 import get_blosum50_matrix
+from lock_gp.gp_wrapper import GPWrapper, LinearGP, LockGP, TanimotoGP
 
 
 def train_test_split(
@@ -79,7 +79,7 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_path = Path("data") / "cr6261_h1.csv"
+    data_path = Path(__file__).parent / "data" / "cr6261_h1.csv"
     df = pd.read_csv(data_path)
     sequences = df["sequence"].astype(str).tolist()
     y_np = df["fitness"].to_numpy(dtype=np.float64)
