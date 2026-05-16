@@ -17,7 +17,7 @@ This repo was tested with **PyTorch 2.6**.
 
 ## Data
 
-- `demo/data/cr6261_h1.csv` with columns `sequence` and `fitness`.
+- `demo/cr6261_h1.csv` with columns `sequence` and `fitness`.
 - Alphabet is fixed to the canonical 20 amino acids plus gap token (`-`).
 
 ## How to run

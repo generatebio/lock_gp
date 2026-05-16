@@ -79,7 +79,7 @@ def main() -> None:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_path = Path(__file__).parent / "data" / "cr6261_h1.csv"
+    data_path = Path(__file__).parent / "cr6261_h1.csv"
     df = pd.read_csv(data_path)
     sequences = df["sequence"].astype(str).tolist()
     y_np = df["fitness"].to_numpy(dtype=np.float64)
