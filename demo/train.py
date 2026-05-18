@@ -74,7 +74,7 @@ def evaluate(y_true: torch.Tensor, y_pred_mean: torch.Tensor, y_pred_var: torch.
 def main() -> None:
     """Fit Linear, LOCK, and Tanimoto GPs to CR6261-H1 dataset."""
     parser = argparse.ArgumentParser(description="LOCK GP Demo")
-    parser.add_argument("--num-training", type=int, default=256, help="Number of training points.")
+    parser.add_argument("--train-size", type=int, default=256, help="Number of training points.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -88,19 +88,18 @@ def main() -> None:
     x = encode_one_hot(sequences, alphabet, dtype=torch.float64)
     y = torch.tensor(y_np, dtype=torch.float64)
 
-    x_train, y_train, x_test, y_test = train_test_split(x, y, num_train=args.num_training, device=device)
+    x_train, y_train, x_test, y_test = train_test_split(x, y, num_train=args.train_size, device=device)
 
     print(f"Device: {device}     Train size: {len(y_train)}     Test size: {len(y_test)}")
 
-    gp_configs: list[tuple[str, type[GPWrapper]]] = [
-        ("Linear GP", LinearGP),
-        ("Tanimoto GP", TanimotoGP),
-        ("LOCK GP", LockGP),
+    gp_models: list[tuple[str, GPWrapper]] = [
+        ("Linear GP", LinearGP()),
+        ("Tanimoto GP", TanimotoGP(alphabet=alphabet)),
+        ("LOCK GP", LockGP(alphabet=alphabet)),
     ]
 
     results: dict[str, dict[str, float]] = {}
-    for name, gp_cls in gp_configs:
-        gp = gp_cls()
+    for name, gp in gp_models:
         gp.fit(x_train, y_train)
         mean, var = gp.predict(x_test)
         results[name] = evaluate(y_test, mean, var)

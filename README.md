@@ -23,7 +23,7 @@ This repo was tested with **PyTorch 2.6**.
 ## How to run
 
 ```bash
-uv run python -m demo.train --num-training 256
+uv run python -m demo.train --train-size 256
 ```
 
 The script:
