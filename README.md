@@ -26,6 +26,12 @@ This repo was tested with **PyTorch 2.6**.
 uv run python -m demo.train --train-size 256
 ```
 
+To train on custom data, pass a CSV with `sequence` and `fitness` columns:
+
+```bash
+uv run python -m demo.train --data path/to/data.csv --train-size 256
+```
+
 The script:
 - Fits LOCK, Linear & Tanimoto GPs
 - Reports Test Spearman, Pearson, MAE, and NLL for each GP variant

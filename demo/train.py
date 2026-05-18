@@ -74,13 +74,18 @@ def evaluate(y_true: torch.Tensor, y_pred_mean: torch.Tensor, y_pred_var: torch.
 def main() -> None:
     """Fit Linear, LOCK, and Tanimoto GPs to CR6261-H1 dataset."""
     parser = argparse.ArgumentParser(description="LOCK GP Demo")
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path(__file__).parent / "cr6261_h1.csv",
+        help="Path to a CSV with sequence and fitness columns.",
+    )
     parser.add_argument("--train-size", type=int, default=256, help="Number of training points.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_path = Path(__file__).parent / "cr6261_h1.csv"
-    df = pd.read_csv(data_path)
+    df = pd.read_csv(args.data)
     sequences = df["sequence"].astype(str).tolist()
     y_np = df["fitness"].to_numpy(dtype=np.float64)
 
