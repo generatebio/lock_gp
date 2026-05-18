@@ -11,9 +11,9 @@ from gpytorch.constraints import GreaterThan
 from gpytorch.kernels import LinearKernel, ScaleKernel
 from gpytorch.priors import GammaPrior
 
-from .exact_gp import ExactGPModel
-from .lock_kernel import build_lock_kernel
-from .tanimoto_kernel import TanimotoKernel
+from lock_gp.exact_gp import ExactGPModel
+from lock_gp.lock_kernel import build_lock_kernel
+from lock_gp.tanimoto_kernel import TanimotoKernel
 import logging
 import gc
 

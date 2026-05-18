@@ -30,6 +30,12 @@ include = ["lock_gp"]
 [tool.ruff]
 line-length = 120
 
+[tool.ruff.lint]
+extend-select = ["TID252"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
+
 [[tool.uv.index]]
 name = "pypi"
 url = "https://pypi.org/simple"

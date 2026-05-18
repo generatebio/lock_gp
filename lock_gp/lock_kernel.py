@@ -8,8 +8,8 @@ from gpytorch.constraints import GreaterThan
 from gpytorch.kernels import AdditiveKernel, Kernel, ProductKernel, ScaleKernel
 from gpytorch.priors import GammaPrior, NormalPrior
 
-from .blosum50 import get_blosum50_matrix
-from .utils import _gpytorch_default_setting_closure, reshape_inputs
+from lock_gp.blosum50 import get_blosum50_matrix
+from lock_gp.utils import _gpytorch_default_setting_closure, reshape_inputs
 
 
 def _validate_alphabet_size(x1: torch.Tensor, x2: torch.Tensor, expected_size: int) -> None:
