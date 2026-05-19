@@ -17,13 +17,19 @@ This repo was tested with **PyTorch 2.6**.
 
 ## Data
 
-- `data/cr6261_h1.csv` with columns `sequence` and `fitness`.
+- `demo/cr6261_h1.csv` with columns `sequence` and `fitness`.
 - Alphabet is fixed to the canonical 20 amino acids plus gap token (`-`).
 
 ## How to run
 
 ```bash
-uv run python -m lock_gp.train --num-training 256
+uv run python -m demo.train --train-size 256
+```
+
+To train on custom data, pass a CSV with `sequence` and `fitness` columns:
+
+```bash
+uv run python -m demo.train --data path/to/data.csv --train-size 256
 ```
 
 The script:

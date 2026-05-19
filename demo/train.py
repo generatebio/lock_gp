@@ -8,9 +8,9 @@ import pandas as pd
 import torch
 from scipy.stats import pearsonr, spearmanr
 
-from .blosum50 import get_blosum50_matrix
-from .utils import encode_one_hot
-from .gp_wrapper import GPWrapper, LinearGP, LockGP, TanimotoGP
+from demo.util import encode_one_hot
+from lock_gp.blosum50 import get_blosum50_matrix
+from lock_gp.gp_wrapper import GPWrapper, LinearGP, LockGP, TanimotoGP
 
 
 def train_test_split(
@@ -74,13 +74,18 @@ def evaluate(y_true: torch.Tensor, y_pred_mean: torch.Tensor, y_pred_var: torch.
 def main() -> None:
     """Fit Linear, LOCK, and Tanimoto GPs to CR6261-H1 dataset."""
     parser = argparse.ArgumentParser(description="LOCK GP Demo")
-    parser.add_argument("--num-training", type=int, default=256, help="Number of training points.")
+    parser.add_argument(
+        "--data",
+        type=Path,
+        default=Path(__file__).parent / "cr6261_h1.csv",
+        help="Path to a CSV with sequence and fitness columns.",
+    )
+    parser.add_argument("--train-size", type=int, default=256, help="Number of training points.")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    data_path = Path("data") / "cr6261_h1.csv"
-    df = pd.read_csv(data_path)
+    df = pd.read_csv(args.data)
     sequences = df["sequence"].astype(str).tolist()
     y_np = df["fitness"].to_numpy(dtype=np.float64)
 
@@ -88,19 +93,18 @@ def main() -> None:
     x = encode_one_hot(sequences, alphabet, dtype=torch.float64)
     y = torch.tensor(y_np, dtype=torch.float64)
 
-    x_train, y_train, x_test, y_test = train_test_split(x, y, num_train=args.num_training, device=device)
+    x_train, y_train, x_test, y_test = train_test_split(x, y, num_train=args.train_size, device=device)
 
     print(f"Device: {device}     Train size: {len(y_train)}     Test size: {len(y_test)}")
 
-    gp_configs: list[tuple[str, type[GPWrapper]]] = [
-        ("Linear GP", LinearGP),
-        ("Tanimoto GP", TanimotoGP),
-        ("LOCK GP", LockGP),
+    gp_models: list[tuple[str, GPWrapper]] = [
+        ("Linear GP", LinearGP()),
+        ("Tanimoto GP", TanimotoGP(alphabet=alphabet)),
+        ("LOCK GP", LockGP(alphabet=alphabet)),
     ]
 
     results: dict[str, dict[str, float]] = {}
-    for name, gp_cls in gp_configs:
-        gp = gp_cls()
+    for name, gp in gp_models:
         gp.fit(x_train, y_train)
         mean, var = gp.predict(x_test)
         results[name] = evaluate(y_test, mean, var)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import gpytorch
 import torch
@@ -11,9 +11,9 @@ from gpytorch.constraints import GreaterThan
 from gpytorch.kernels import LinearKernel, ScaleKernel
 from gpytorch.priors import GammaPrior
 
-from .exact_gp import ExactGPModel
-from .lock_kernel import build_lock_kernel
-from .tanimoto_kernel import TanimotoKernel
+from lock_gp.exact_gp import ExactGPModel
+from lock_gp.lock_kernel import build_lock_kernel
+from lock_gp.tanimoto_kernel import TanimotoKernel
 import logging
 import gc
 
@@ -138,19 +138,19 @@ class LinearGP(GPWrapper):
 class LockGP(GPWrapper):
     """GP with the composite LOCK kernel."""
 
-    def __init__(self) -> None:
+    def __init__(self, alphabet: Sequence[str]) -> None:
         super().__init__(
-            kernel_factory=lambda x: build_lock_kernel(num_positions=x.shape[1])
+            kernel_factory=lambda x: build_lock_kernel(num_positions=x.shape[1], alphabet=alphabet)
         )
 
 
 class TanimotoGP(GPWrapper):
     """GP with a scaled Tanimoto kernel using BLOSUM50 encoding."""
 
-    def __init__(self) -> None:
+    def __init__(self, alphabet: Sequence[str]) -> None:
         super().__init__(
             kernel_factory=lambda x: ScaleKernel(
-                TanimotoKernel(num_positions=x.shape[1]),
+                TanimotoKernel(num_positions=x.shape[1], alphabet=alphabet),
                 outputscale_prior=GammaPrior(2.0, 2.0),
                 outputscale_constraint=GreaterThan(1e-4),
             )

@@ -1,10 +1,20 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import torch
 from gpytorch.kernels import Kernel
 
-from .blosum50 import get_blosum50_matrix
-from .utils import reshape_inputs
+from lock_gp.blosum50 import get_blosum50_matrix
+from lock_gp.utils import reshape_inputs
+
+
+def _validate_alphabet_size(x1: torch.Tensor, x2: torch.Tensor, expected_size: int) -> None:
+    if x1.shape[2] != expected_size or x2.shape[2] != expected_size:
+        raise ValueError(
+            f"Expected one-hot inputs to use alphabet size {expected_size}; "
+            f"got {x1.shape[2]} and {x2.shape[2]}."
+        )
 
 
 class TanimotoKernel(Kernel):
@@ -16,15 +26,18 @@ class TanimotoKernel(Kernel):
 
     has_lengthscale = False
 
-    def __init__(self, num_positions: int) -> None:
+    def __init__(self, num_positions: int, alphabet: Sequence[str]) -> None:
         """
         Initialize the kernel.
 
         Args:
             num_positions: Number of variable positions in the aligned sequence.
+            alphabet: Alphabet used to one-hot encode inputs.
         """
         super().__init__()
-        _, blosum = get_blosum50_matrix(normalize=False)
+        blosum_alphabet, blosum = get_blosum50_matrix(normalize=False)
+        if list(alphabet) != blosum_alphabet:
+            raise ValueError("Input alphabet must match the BLOSUM50 alphabet order.")
         eigenvalues, eigenvectors = torch.linalg.eigh(blosum)
         encoding = eigenvectors @ torch.diag(torch.sqrt(torch.clamp(eigenvalues, min=0.0)))
         self.register_buffer("encoding", encoding)
@@ -45,6 +58,7 @@ class TanimotoKernel(Kernel):
         """
         x1 = reshape_inputs(x1, self.num_positions)
         x2 = reshape_inputs(x2, self.num_positions)
+        _validate_alphabet_size(x1, x2, expected_size=self.encoding.shape[0])
         if diag:
             return torch.ones(x1.shape[0], dtype=x1.dtype, device=x1.device)
 

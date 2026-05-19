@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from functools import partial
 
 import torch
@@ -7,8 +8,16 @@ from gpytorch.constraints import GreaterThan
 from gpytorch.kernels import AdditiveKernel, Kernel, ProductKernel, ScaleKernel
 from gpytorch.priors import GammaPrior, NormalPrior
 
-from .blosum50 import get_blosum50_matrix
-from .utils import _gpytorch_default_setting_closure, reshape_inputs
+from lock_gp.blosum50 import get_blosum50_matrix
+from lock_gp.utils import _gpytorch_default_setting_closure, reshape_inputs
+
+
+def _validate_alphabet_size(x1: torch.Tensor, x2: torch.Tensor, expected_size: int) -> None:
+    if x1.shape[2] != expected_size or x2.shape[2] != expected_size:
+        raise ValueError(
+            f"Expected one-hot inputs to use alphabet size {expected_size}; "
+            f"got {x1.shape[2]} and {x2.shape[2]}."
+        )
 
 
 class LinearGlobalLOCKKernel(Kernel):
@@ -16,16 +25,19 @@ class LinearGlobalLOCKKernel(Kernel):
 
     has_lengthscale = False
 
-    def __init__(self, num_positions: int, **kwargs) -> None:
+    def __init__(self, num_positions: int, alphabet: Sequence[str], **kwargs) -> None:
         """
         Initialize the kernel.
 
         Args:
             num_positions: Number of positions in the aligned sequence.
+            alphabet: Alphabet used to one-hot encode inputs.
             **kwargs: Additional arguments passed to parent Kernel class.
         """
         super().__init__(**kwargs)
-        _, blosum = get_blosum50_matrix(normalize=True)
+        blosum_alphabet, blosum = get_blosum50_matrix(normalize=True)
+        if list(alphabet) != blosum_alphabet:
+            raise ValueError("Input alphabet must match the BLOSUM50 alphabet order.")
         self.register_buffer("blosum", blosum)
         self.num_positions = num_positions
         self.register_parameter(
@@ -54,6 +66,7 @@ class LinearGlobalLOCKKernel(Kernel):
         """
         x1 = reshape_inputs(x1, self.num_positions)
         x2 = reshape_inputs(x2, self.num_positions)
+        _validate_alphabet_size(x1, x2, expected_size=self.blosum.shape[0])
         if diag:
             return self.num_positions * torch.ones(x1.shape[0], dtype=x1.dtype, device=x1.device)
         global_exponent = self.log_global_exponent.exp().to(dtype=x1.dtype, device=x1.device)
@@ -67,16 +80,19 @@ class NonlinearLocalLOCKKernel(Kernel):
 
     has_lengthscale = False
 
-    def __init__(self, num_positions: int, **kwargs) -> None:
+    def __init__(self, num_positions: int, alphabet: Sequence[str], **kwargs) -> None:
         """
         Initialize the kernel.
 
         Args:
             num_positions: Number of positions in the aligned sequence.
+            alphabet: Alphabet used to one-hot encode inputs.
             **kwargs: Additional arguments passed to parent Kernel class.
         """
         super().__init__(**kwargs)
-        _, blosum = get_blosum50_matrix(normalize=True)
+        blosum_alphabet, blosum = get_blosum50_matrix(normalize=True)
+        if list(alphabet) != blosum_alphabet:
+            raise ValueError("Input alphabet must match the BLOSUM50 alphabet order.")
         self.register_buffer("blosum", blosum)
         self.num_positions = num_positions
         self.register_parameter(
@@ -115,6 +131,7 @@ class NonlinearLocalLOCKKernel(Kernel):
         """
         x1 = reshape_inputs(x1, self.num_positions)
         x2 = reshape_inputs(x2, self.num_positions)
+        _validate_alphabet_size(x1, x2, expected_size=self.blosum.shape[0])
         if diag:
             return torch.ones(x1.shape[0], dtype=x1.dtype, device=x1.device)
         global_exponent = self.log_global_exponent.exp().to(dtype=x1.dtype, device=x1.device)
@@ -124,7 +141,7 @@ class NonlinearLocalLOCKKernel(Kernel):
         return torch.einsum("bla,BlA,laA->bB", x1, x2, blosum).exp()
 
 
-def build_lock_kernel(num_positions: int) -> Kernel:
+def build_lock_kernel(num_positions: int, alphabet: Sequence[str]) -> Kernel:
     """
     Build the full LOCK kernel.
 
@@ -135,13 +152,14 @@ def build_lock_kernel(num_positions: int) -> Kernel:
 
     Args:
         num_positions: Number of positions in the aligned sequence.
+        alphabet: Alphabet used to one-hot encode inputs.
 
     Returns:
         Composite LOCK kernel.
     """
-    linear1 = LinearGlobalLOCKKernel(num_positions=num_positions)
-    linear2 = LinearGlobalLOCKKernel(num_positions=num_positions)
-    nonlinear = NonlinearLocalLOCKKernel(num_positions=num_positions)
+    linear1 = LinearGlobalLOCKKernel(num_positions=num_positions, alphabet=alphabet)
+    linear2 = LinearGlobalLOCKKernel(num_positions=num_positions, alphabet=alphabet)
+    nonlinear = NonlinearLocalLOCKKernel(num_positions=num_positions, alphabet=alphabet)
     return AdditiveKernel(
         ScaleKernel(
             ProductKernel(nonlinear, linear1),

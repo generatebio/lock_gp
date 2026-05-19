@@ -21,7 +21,7 @@ _THRESHOLDS = {
 
 def test_train_end_to_end() -> None:
     result = subprocess.run(
-        [sys.executable, "-m", "lock_gp.train", "--num-training", "256"],
+        [sys.executable, "-m", "demo.train", "--data", "demo/cr6261_h1.csv", "--train-size", "256"],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
