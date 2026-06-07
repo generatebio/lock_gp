@@ -1,7 +1,7 @@
 [project]
 name = "lock-gp"
 version = "0.1.0"
-description = "Minimal demo of LOCK GP on CR6261-H1 antibody dataset."
+description = "GPyTorch implementation of LOCK GP with accompanying demo on CR6261-H1 antibody dataset."
 authors = [
     {name = "Martin Jankowiak", email = "jankowiak@gmail.com"},
     {name = "Yerdos Ordabayev", email = "yordabayev@generatebiomedicines.com"},

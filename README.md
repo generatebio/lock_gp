@@ -5,14 +5,19 @@
 </h1>
 
 <p align="center">
-  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry Ward ⋅ Hunter Nisonoff ⋅ James McFarland ⋅ Gevorg Grigoryan
+  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry Ward 
+  Hunter Nisonoff ⋅ James McFarland ⋅ Gevorg Grigoryan
 </p>
 
-<p align="center">
-  ICML 2026
-</p>
+## Paper Abstract
 
-Minimal, self-contained demo of LOCK GP on CR6261-H1 antibody fitness data.
+Despite its importance to applications in protein design, predicting protein properties like binding affinity and thermostability from sparse experimental data remains a significant challenge.
+Accordingly, we introduce a class of sequence kernels that exploit evolutionary substitution matrices as well as local linearity and demonstrate that the resulting Gaussian processes provide data-efficient models of protein property landscapes, frequently outperforming alternatives that rely on foundation model embeddings.
+Furthermore---by learning what are in effect structure-aware substitution matrices---we show that our kernels can readily incorporate structural information from foundation models. We demonstrate that these structure-conditioned kernels are well suited to multi-task learning across multiple protein property landscapes and can decisively outperform local supervised learning methods.
+
+## Repo contents 
+
+This repo contains a GPyTorch implementation of LOCK GP as well as a [demo](demo/) on CR6261-H1 antibody fitness data.
 
 ## Setup
 
@@ -27,28 +32,9 @@ uv sync
 
 This repo was tested with **PyTorch 2.6**.
 
-## Data
-
-- `demo/cr6261_h1.csv` with columns `sequence` and `fitness`.
-- Alphabet is fixed to the canonical 20 amino acids plus gap token (`-`).
-
-## How to run
-
-```bash
-uv run python -m demo.train --train-size 256
-```
-
-To train on custom data, pass a CSV with `sequence` and `fitness` columns:
-
-```bash
-uv run python -m demo.train --data path/to/data.csv --train-size 256
-```
-
-The script:
-- Fits LOCK, Linear & Tanimoto GPs
-- Reports Test Spearman, Pearson, MAE, and NLL for each GP variant
-
 ## Citation
+
+If you use LOCK GP please consider citing our paper:
 
 ```bibtex
 @inproceedings{jankowiak2026flexible,
