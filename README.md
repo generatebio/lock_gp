@@ -1,4 +1,16 @@
-# LOCK GP
+<h1 align="center">
+  <img src="assets/blosum.png" width="48" alt="BLOSUM icon">
+  Flexible Kernels for Protein Property Prediction
+  <img src="assets/blosum.png" width="48" alt="BLOSUM icon">
+</h1>
+
+<p align="center">
+  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry Ward ⋅ Hunter Nisonoff ⋅ James McFarland ⋅ Gevorg Grigoryan
+</p>
+
+<p align="center">
+  ICML 2026
+</p>
 
 Minimal, self-contained demo of LOCK GP on CR6261-H1 antibody fitness data.
 
@@ -35,3 +47,15 @@ uv run python -m demo.train --data path/to/data.csv --train-size 256
 The script:
 - Fits LOCK, Linear & Tanimoto GPs
 - Reports Test Spearman, Pearson, MAE, and NLL for each GP variant
+
+## Citation
+
+```bibtex
+@inproceedings{jankowiak2026flexible,
+  title={Flexible Kernels for Protein Property Prediction},
+  author={Jankowiak, Martin and Ordabayev, Yerdos and Tuwani, Rudraksh and Ward, Henry and Nisonoff, Hunter and McFarland, James and Grigoryan, Gevorg},
+  booktitle={International conference on machine learning},
+  year={2026},
+  organization={PMLR}
+}
+```
