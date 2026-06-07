@@ -2,7 +2,7 @@
 
 ## Example data from Shanker et al.
 
-- `demo/cr6261_h1.csv` with columns `sequence` and `fitness`
+- `cr6261_h1.csv` with columns `sequence` and `fitness`
 - Alphabet is fixed to the canonical 20 amino acids plus gap token (`-`)
 - Sequences are subset to the variable region
 

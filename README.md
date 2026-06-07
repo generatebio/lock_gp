@@ -1,11 +1,11 @@
 <h1 align="center">
-  <img src="assets/blosum.png" width="48" alt="BLOSUM icon">
+  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
   Flexible Kernels for Protein Property Prediction
-  <img src="assets/blosum.png" width="48" alt="BLOSUM icon">
+  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
 </h1>
 
 <p align="center">
-  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry Ward 
+  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry Ward ⋅
   Hunter Nisonoff ⋅ James McFarland ⋅ Gevorg Grigoryan
 </p>
 
