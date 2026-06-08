@@ -10,8 +10,8 @@
 </h1>
 
 <p align="center">
-  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry Ward ⋅
-  Hunter Nisonoff ⋅ James McFarland ⋅ Gevorg Grigoryan
+  Martin Jankowiak ⋅ Yerdos Ordabayev ⋅ Rudraksh Tuwani ⋅ Henry N. Ward ⋅
+  Hunter Nisonoff ⋅ James M. McFarland ⋅ Gevorg Grigoryan
 </p>
 
 ## Paper Abstract
