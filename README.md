@@ -22,7 +22,7 @@ Furthermore---by learning what are in effect structure-aware substitution matric
 
 ## Repo contents 
 
-This repo contains a GPyTorch implementation of LOCK GP as well as a [demo](demo/) on CR6261-H1 antibody fitness data.
+This repo contains a [GPyTorch](https://gpytorch.ai/) implementation of [LOCK GP kernel](lock_gp/lock_kernel.py) as well as a [demo](demo/) on CR6261-H1 antibody fitness data.
 
 ## Setup
 
