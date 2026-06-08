@@ -1,10 +1,12 @@
-<h1 align="center">
-  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
-  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
-  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
-  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
-  <img src="assets/blosum.png" width="96" alt="BLOSUM icon">
-</h1>
+<table align="center">
+  <tr>
+    <td><img src="assets/blosum.png" width="100%"></td>
+    <td><img src="assets/blosum.png" width="100%"></td>
+    <td><img src="assets/blosum.png" width="100%"></td>
+    <td><img src="assets/blosum.png" width="100%"></td>
+    <td><img src="assets/blosum.png" width="100%"></td>
+  </tr>
+</table>
 <h1 align="center">
   Flexible Kernels for Protein Property Prediction
 </h1>
