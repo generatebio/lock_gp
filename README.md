@@ -22,7 +22,7 @@ Furthermore---by learning what are in effect structure-aware substitution matric
 
 ## Repo contents 
 
-This repo contains a [GPyTorch](https://gpytorch.ai/) implementation of [LOCK GP kernel](lock_gp/lock_kernel.py) as well as a [demo](demo/) on CR6261-H1 antibody fitness data.
+This repo contains a [GPyTorch](https://gpytorch.ai/) implementation of the [LOCK GP kernel](lock_gp/lock_kernel.py) as well as a [demo](demo/) on CR6261-H1 antibody fitness data.
 
 ## Setup
 
@@ -44,9 +44,10 @@ If you use LOCK GP please consider citing our paper:
 ```bibtex
 @inproceedings{jankowiak2026flexible,
   title={Flexible Kernels for Protein Property Prediction},
-  author={Jankowiak, Martin and Ordabayev, Yerdos and Tuwani, Rudraksh and Ward, Henry and Nisonoff, Hunter and McFarland, James and Grigoryan, Gevorg},
-  booktitle={International conference on machine learning},
+  author={Jankowiak, Martin and Ordabayev, Yerdos and Tuwani, Rudraksh and Ward, Henry N. and Nisonoff, Hunter and McFarland, James M. and Grigoryan, Gevorg},
+  booktitle={Proceedings of the 43rd International Conference on Machine Learning},
   year={2026},
-  organization={PMLR}
+  series = {Proceedings of Machine Learning Research},
+  publisher={PMLR}
 }
 ```
