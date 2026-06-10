@@ -53,7 +53,7 @@ If you use LOCK GP please consider citing our paper:
   author={Jankowiak, Martin and Ordabayev, Yerdos and Tuwani, Rudraksh and Ward, Henry N. and Nisonoff, Hunter and McFarland, James M. and Grigoryan, Gevorg},
   booktitle={Proceedings of the 43rd International Conference on Machine Learning},
   year={2026},
-  series = {Proceedings of Machine Learning Research},
+  series={Proceedings of Machine Learning Research},
   publisher={PMLR}
 }
 ```
