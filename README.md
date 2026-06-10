@@ -14,11 +14,13 @@
   Hunter Nisonoff ⋅ James M. McFarland ⋅ Gevorg Grigoryan
 </p>
 
+<p align="center">
+  <a href="https://arxiv.org/abs/2606.11057">arXiv preprint</a>
+</p>
+
 ---
 
 ## Paper Abstract 
-
-\[[link to arXiv pre-print](https://arxiv.org/abs/2606.11057)\]
 
 Despite its importance to applications in protein design, predicting protein properties like binding affinity and thermostability from sparse experimental data remains a significant challenge.
 Accordingly, we introduce a class of sequence kernels that exploit evolutionary substitution matrices as well as local linearity and demonstrate that the resulting Gaussian processes provide data-efficient models of protein property landscapes, frequently outperforming alternatives that rely on foundation model embeddings.
