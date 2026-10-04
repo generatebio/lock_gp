@@ -48,12 +48,16 @@ This repo was tested with **PyTorch 2.6**.
 If you use LOCK GP please consider citing our paper:
 
 ```bibtex
-@inproceedings{jankowiak2026flexible,
-  title={Flexible Kernels for Protein Property Prediction},
-  author={Jankowiak, Martin and Ordabayev, Yerdos and Tuwani, Rudraksh and Ward, Henry N. and Nisonoff, Hunter and McFarland, James M. and Grigoryan, Gevorg},
-  booktitle={Proceedings of the 43rd International Conference on Machine Learning},
-  year={2026},
-  series={Proceedings of Machine Learning Research},
-  publisher={PMLR}
+@InProceedings{pmlr-v306-jankowiak26a,
+  title = 	 {Flexible Kernels for Protein Property Prediction},
+  author =       {Jankowiak, Martin and Ordabayev, Yerdos and Tuwani, Rudraksh and Ward, Henry Neil and Nisonoff, Hunter and McFarland, James M and Grigoryan, Gevorg},
+  booktitle = 	 {Proceedings of the 43rd International Conference on Machine Learning},
+  pages = 	 {50779--50829},
+  year = 	 {2026},
+  volume = 	 {306},
+  series = 	 {Proceedings of Machine Learning Research},
+  publisher =    {PMLR},
+  pdf = 	 {https://raw.githubusercontent.com/mlresearch/v306/main/assets/jankowiak26a/jankowiak26a.pdf},
+  url = 	 {https://proceedings.mlr.press/v306/jankowiak26a.html}
 }
 ```
