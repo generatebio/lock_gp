@@ -18,6 +18,10 @@
   <a href="https://arxiv.org/abs/2606.11057">arXiv preprint</a>
 </p>
 
+<p align="center">
+  <a href="https://proceedings.mlr.press/v306/jankowiak26a.html">PMLR</a>
+</p>
+
 ---
 
 ## Paper Abstract 
